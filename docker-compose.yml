@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: acortador
+      POSTGRES_PASSWORD: acortador
+      POSTGRES_DB: acortador
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U acortador']
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    environment:
+      PORT: 3000
+      HOST: 0.0.0.0
+      BASE_URL: http://localhost:3000
+      DATABASE_URL: postgres://acortador:acortador@db:5432/acortador
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-solo-para-desarrollo-cambialo}
+    ports:
+      - '3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:

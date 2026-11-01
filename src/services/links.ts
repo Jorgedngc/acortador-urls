@@ -54,6 +54,8 @@ export class LinkService {
   private readonly db: pg.Pool
   private readonly redis: Redis
   private readonly baseUrl: string
+  /** Escrituras de clics en curso; se esperan al cerrar la app para no perder ninguna. */
+  private readonly pendingClicks = new Set<Promise<void>>()
 
   constructor(db: pg.Pool, redis: Redis, baseUrl: string) {
     this.db = db
@@ -199,16 +201,30 @@ export class LinkService {
     return link
   }
 
-  /** Guarda el clic y actualiza el contador del enlace en una sola consulta. */
-  async recordClick(linkId: string, click: ClickData): Promise<void> {
-    await this.db.query(
-      `WITH inserted AS (
-         INSERT INTO clicks (link_id, visitor_hash, country, device, browser, os, referrer_host)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-       )
-       UPDATE links SET click_count = click_count + 1 WHERE id = $1`,
-      [linkId, click.visitorHash, click.country, click.device, click.browser, click.os, click.referrerHost],
-    )
+  /**
+   * Guarda el clic y actualiza el contador del enlace en una sola consulta.
+   * Se lanza sin esperar (la redirección no debe ir más lenta por esto), pero
+   * la promesa queda registrada para poder esperarla con `flushClicks`.
+   */
+  recordClick(linkId: string, click: ClickData): Promise<void> {
+    const write = this.db
+      .query(
+        `WITH inserted AS (
+           INSERT INTO clicks (link_id, visitor_hash, country, device, browser, os, referrer_host)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+         )
+         UPDATE links SET click_count = click_count + 1 WHERE id = $1`,
+        [linkId, click.visitorHash, click.country, click.device, click.browser, click.os, click.referrerHost],
+      )
+      .then(() => undefined)
+      .finally(() => this.pendingClicks.delete(write))
+    this.pendingClicks.add(write)
+    return write
+  }
+
+  /** Espera a que terminen las escrituras de clics pendientes (los errores ya se registran aparte). */
+  async flushClicks(): Promise<void> {
+    await Promise.allSettled([...this.pendingClicks])
   }
 }
 

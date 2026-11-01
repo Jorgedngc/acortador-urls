@@ -59,6 +59,9 @@ export async function buildApp({ config, db, redis, logger = true }: AppDeps) {
     stats: new StatsService(db),
   })
 
+  // Al cerrar (SIGTERM, fin de los tests...) se esperan los clics que aún se están guardando.
+  app.addHook('onClose', async () => app.services.links.flushClicks())
+
   for (const schema of [ErrorSchema, UserSchema, LinkSchema, StatsSchema]) app.addSchema(schema)
 
   await app.register(cors, { origin: true })

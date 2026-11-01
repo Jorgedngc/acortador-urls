@@ -42,7 +42,7 @@ function isPrivateIp(host: string): boolean {
     return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)
   }
   if (version === 6) {
-    return host === '::1' || host === '::' || /^f[cd]/.test(host) || /^fe80:/.test(host) || host.startsWith('::ffff:')
+    return host === '::1' || host === '::' || /^f[cd]/.test(host) || host.startsWith('fe80:') || host.startsWith('::ffff:')
   }
   return false
 }

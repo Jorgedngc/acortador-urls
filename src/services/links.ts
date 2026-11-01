@@ -224,7 +224,7 @@ export class LinkService {
 
   /** Espera a que terminen las escrituras de clics pendientes (los errores ya se registran aparte). */
   async flushClicks(): Promise<void> {
-    await Promise.allSettled([...this.pendingClicks])
+    await Promise.allSettled(this.pendingClicks)
   }
 }
 

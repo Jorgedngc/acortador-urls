@@ -30,12 +30,13 @@ services:
     environment:
       PORT: 3000
       HOST: 0.0.0.0
-      BASE_URL: http://localhost:3000
+      BASE_URL: http://localhost:${API_PORT:-3000}
       DATABASE_URL: postgres://acortador:acortador@db:5432/acortador
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-solo-para-desarrollo-cambialo}
     ports:
-      - '3000:3000'
+      # Cambia el puerto con API_PORT=4000 docker compose up si el 3000 está ocupado.
+      - '${API_PORT:-3000}:3000'
     depends_on:
       db:
         condition: service_healthy

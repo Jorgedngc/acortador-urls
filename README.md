@@ -50,7 +50,11 @@ API REST para acortar enlaces y medir sus clics, construida con **Node.js, Fasti
 docker compose up --build
 ```
 
-La API queda en <http://localhost:3000> y la documentación en <http://localhost:3000/docs>.
+La API queda en <http://localhost:3000> y la documentación en <http://localhost:3000/docs>. Si el puerto 3000 está ocupado, usa otro:
+
+```bash
+API_PORT=4000 docker compose up --build
+```
 
 ### En local para desarrollo
 
